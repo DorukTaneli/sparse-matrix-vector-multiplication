@@ -30,8 +30,8 @@ echo "Running compiled binary..."
 #serial version
 lscpu
 echo "Serial version..."
-build/spmv_serial Cube_Coup_dt6/Cube_Coup_dt6.mtx 20
-build/spmv_serial Flan_1565/Flan_1565.mtx 20
+build/spmv Cube_Coup_dt6/Cube_Coup_dt6.mtx 20
+build/spmv Flan_1565/Flan_1565.mtx 20
 
 #parallel version
 echo "Parallel version with 1 process"
