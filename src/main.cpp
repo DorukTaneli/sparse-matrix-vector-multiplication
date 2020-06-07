@@ -29,6 +29,8 @@ int main(int argc, char **argv)
   MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 
+  int vecDataSize[num_procs], vecDataDispls[num_procs];
+
   tot_omp_threads = 16 / num_procs;
   omp_threads_per_mpi = tot_omp_threads / num_procs;
 
@@ -72,7 +74,6 @@ int main(int argc, char **argv)
     vSizeLast = matrix.n - (num_procs - 1) * vSize; //vector size for last process
 
     // Vector size and displacement for each processor
-    int vecDataSize[num_procs], vecDataDispls[num_procs];
     for (int p = 0; p < num_procs - 1; p++)
     {
       vecDataSize[p] = vSize;
@@ -116,7 +117,7 @@ int main(int argc, char **argv)
   // Allocate vector result
   result = (double *)malloc(sizeof(double) * matrix.n);
   // Allocate vector myresult
-  myResult = (double *)malloc(sizeof(double) * M);
+  myResult = (double *)malloc(sizeof(double) * vSize);
 
   // Initialize right-hand-side
   for (int i = 0; i < matrix.n; i++)
@@ -138,7 +139,7 @@ int main(int argc, char **argv)
     if (myrank == 0)
     {
       //Gather and broadcast result in a more efficient way
-      MPI_Allgatherv(myResult, M, MPI_DOUBLE, result, &N, &M, MPI_DOUBLE, MPI_COMM_WORLD);
+      MPI_Allgatherv(myResult, vSize, MPI_DOUBLE, result, vecDataSize, vecDataDispls, MPI_DOUBLE, MPI_COMM_WORLD);
       printf("Allgathered\n");
     }
 
