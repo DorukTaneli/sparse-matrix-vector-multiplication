@@ -19,7 +19,7 @@ int main(int argc, char **argv)
   string matrix_name;
   int num_procs, myrank, M, omp_threads;
   double *myVecData, *myMatVal, *result, *myResult, *rhs, *sendVecData;
-  int *myColInd, *myRowptr;
+  int time_steps, *myColInd, *myRowptr;
 
   // Initializations
   MPI_Init(&argc, &argv);
@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 
     printf("Reading .mtx file\n");
     int retCode = 0;
-    int time_steps = atoi(argv[2]);
+    time_steps = atoi(argv[2]);
     matrix_name = argv[1];
     cout << matrix_name << endl;
 
@@ -101,7 +101,7 @@ int main(int argc, char **argv)
     for (int i = 0; i < M; i++)
     {
       myResult[i] = 0.0;
-      for (int j = myRowPtr[i]; j < myRowPtr[i + 1]; j++)
+      for (int j = myRowptr[i]; j < myRowptr[i + 1]; j++)
       {
         //#pragma omp atomic update
         myResult[i] += myMatVal[j] * rhs[myColInd[j]];
@@ -116,6 +116,8 @@ int main(int argc, char **argv)
       rhs[i] = result[i];
     }
   }
+
+  MPI_Finalize();
 
   if (myrank = 0) //master
   {
