@@ -19,9 +19,9 @@ int main(int argc, char **argv)
 {
   csr_matrix matrix;
   string matrix_name;
-  int num_procs, myrank, M, omp_threads;
+  int num_procs, myrank, *M, omp_threads;
   double *myVecData, *myMatVal, *result, *myResult, *rhs, *sendVecData;
-  int time_steps, N, *myColInd, *myRowptr;
+  int time_steps, *N, *myColInd, *myRowptr;
 
   // Initializations
   MPI_Init(&argc, &argv);
