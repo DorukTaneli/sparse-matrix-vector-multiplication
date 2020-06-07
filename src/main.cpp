@@ -70,15 +70,15 @@ int main(int argc, char **argv)
   // Scatter matrix entries to each processor
   // by sending partial Row pointers, Column Index and Values
   myRowptr = (int *)malloc(sizeof(int) * (matrix.m + 1));
-  MPI_Scatterv(matrix.csrRowPtr, N, M, MPI_INT,
+  MPI_Scatterv(matrix.csrRowPtr, &N, &M, MPI_INT,
                myRowptr, M, MPI_INT, 0, MPI_COMM_WORLD);
 
   myColInd = (int *)malloc(sizeof(int) * M);
-  MPI_Scatterv(matrix.csrColIdx, N, M, MPI_INT,
+  MPI_Scatterv(matrix.csrColIdx, &N, &M, MPI_INT,
                myColInd, M, MPI_INT, 0, MPI_COMM_WORLD);
 
   myMatVal = (double *)malloc(sizeof(double) * M);
-  MPI_Scatterv(matrix.csrVal, N, M, MPI_DOUBLE,
+  MPI_Scatterv(matrix.csrVal, &N, &M, MPI_DOUBLE,
                myMatVal, M, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 
@@ -112,7 +112,7 @@ int main(int argc, char **argv)
     }
 
     //Gather and broadcast result in a more efficient way
-    MPI_Allgatherv(myResult, M, MPI_DOUBLE, result, N, M, MPI_DOUBLE, MPI_COMM_WORLD);
+    MPI_Allgatherv(myResult, M, MPI_DOUBLE, result, &N, &M, MPI_DOUBLE, MPI_COMM_WORLD);
 
     for (int i = 0; i < matrix.m; i++)
     {
