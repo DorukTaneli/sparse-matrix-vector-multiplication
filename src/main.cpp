@@ -68,12 +68,12 @@ int main(int argc, char **argv)
     N = matrix.n;
     M = N / num_procs; // Assuming N is a multiple of P
 
-    vSize = ceil((double)nrows / num_procs); //partial vector size for each process
+    vSize = ceil((double)matrix.n / num_procs); //partial vector size for each process
     vSizeLast = matrix.n - (num_procs - 1) * vSize; //vector size for last process
 
     // Vector size and displacement for each processor
     int vecDataSize[num_procs], vecDataDispls[num_procs];
-    for (p = 0; p < num_procs - 1; p++)
+    for (int p = 0; p < num_procs - 1; p++)
     {
       vecDataSize[p] = vSize;
       vecDataDispls[p] = p * vSize;
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 
     // Matrix entries count and displacement for each processor
 		int eCount[num_procs]; int eDispls[num_procs];
-		for (p = 0; p < num_procs; p++) {
+		for (int p = 0; p < num_procs; p++) {
 			eCount[p] = matrix.csrRowPtr[p*vSize+vecDataSize[p]] - matrix.csrRowPtr[p*vSize];
 			eDispls[p] = matrix.csrRowPtr[p*vSize];
 		}
