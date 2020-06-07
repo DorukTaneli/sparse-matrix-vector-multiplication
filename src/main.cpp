@@ -30,6 +30,7 @@ int main(int argc, char **argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 
   int vecDataSize[num_procs], vecDataDispls[num_procs];
+  int eCount[num_procs], eDispls[num_procs];
 
   tot_omp_threads = 16 / num_procs;
   omp_threads_per_mpi = tot_omp_threads / num_procs;
@@ -85,8 +86,6 @@ int main(int argc, char **argv)
 
     printf("starting eCount for loop\n");
     // Matrix entries count and displacement for each processor
-    int eCount[num_procs];
-    int eDispls[num_procs];
     for (int p = 0; p < num_procs; p++)
     {
       eCount[p] = matrix.csrRowPtr[p * vSize + vecDataSize[p]] - matrix.csrRowPtr[p * vSize];
