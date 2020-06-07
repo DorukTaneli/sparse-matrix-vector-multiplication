@@ -62,25 +62,24 @@ int main(int argc, char **argv)
     printf("Matrix nnz: %d\n", matrix.nnz);
     coo2csr_in(matrix.m, matrix.nnz, matrix.csrVal, matrix.csrRowPtr, matrix.csrColIdx);
     printf("Done reading file\n");
+
+    N = matrix.n;
+    M = N / num_procs; // Assuming N is a multiple of P
+
+    // Scatter matrix entries to each processor
+    // by sending partial Row pointers, Column Index and Values
+    myRowptr = (int *)malloc(sizeof(int) * (M + 1));
+    MPI_Scatterv(matrix.csrRowPtr, &N, &M, MPI_INT,
+                 myRowptr, M, MPI_INT, 0, MPI_COMM_WORLD);
+
+    myColInd = (int *)malloc(sizeof(int) * N);
+    MPI_Scatterv(matrix.csrColIdx, &N, &M, MPI_INT,
+                 myColInd, M, MPI_INT, 0, MPI_COMM_WORLD);
+
+    myMatVal = (double *)malloc(sizeof(double) * N);
+    MPI_Scatterv(matrix.csrVal, &N, &M, MPI_DOUBLE,
+                 myMatVal, M, MPI_DOUBLE, 0, MPI_COMM_WORLD);
   }
-
-  N = matrix.n;
-  M = N / num_procs; // Assuming N is a multiple of P
-
-  // Scatter matrix entries to each processor
-  // by sending partial Row pointers, Column Index and Values
-  myRowptr = (int *)malloc(sizeof(int) * (M + 1));
-  MPI_Scatterv(matrix.csrRowPtr, &N, &M, MPI_INT,
-               myRowptr, M, MPI_INT, 0, MPI_COMM_WORLD);
-
-  myColInd = (int *)malloc(sizeof(int) * N);
-  MPI_Scatterv(matrix.csrColIdx, &N, &M, MPI_INT,
-               myColInd, M, MPI_INT, 0, MPI_COMM_WORLD);
-
-  myMatVal = (double *)malloc(sizeof(double) * N);
-  MPI_Scatterv(matrix.csrVal, &N, &M, MPI_DOUBLE,
-               myMatVal, M, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
 
   // Allocate vector rhs
   rhs = (double *)malloc(sizeof(double) * matrix.n);
