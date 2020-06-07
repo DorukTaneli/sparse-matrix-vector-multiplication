@@ -78,7 +78,7 @@ int main(int argc, char **argv)
       vecDataSize[p] = vSize;
       vecDataDispls[p] = p * vSize;
     }
-    vecDataSize[num_procs - 1] = vSize2;
+    vecDataSize[num_procs - 1] = vSizeLast;
     vecDataDispls[num_procs - 1] = (num_procs - 1) * vSize;
 
     // Matrix entries count and displacement for each processor
