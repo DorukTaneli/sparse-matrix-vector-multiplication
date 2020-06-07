@@ -17,14 +17,16 @@ int main(int argc, char **argv)
 {
   csr_matrix matrix;
   string matrix_name;
-  int P, myrank, M;
-  double *myVecData, *myMatVal, *result, *rhs, *totalResult, *sendVecData;
+  int num_procs, myrank, M, omp_threads;
+  double *myVecData, *myMatVal, *result, *myResult, *rhs, *sendVecData;
   int *myColInd, *myRowptr;
 
   // Initializations
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+
+  omp_threads = 16 / num_procs;
 
   if (myrank = 0) //master
   {
@@ -60,31 +62,32 @@ int main(int argc, char **argv)
     printf("Done reading file\n");
   }
 
+  M = matrix.n / P; // Assuming N is a multiple of P
+
   // Scatter matrix entries to each processor
   // by sending partial Row pointers, Column Index and Values
   MPI_Scatter(eCount, 1, MPI_INT, &myNumE, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  myRowptr = (int *)malloc(sizeof(int) * (vSize + 1));
-  MPI_Scatterv(rowptr, vecDataSize, vecDataDispls, MPI_INT,
+  myRowptr = (int *)malloc(sizeof(int) * (matrix.m + 1));
+  MPI_Scatterv(matrix.csrRowPtr, vecDataSize, vecDataDispls, MPI_INT,
                myRowptr, vSize, MPI_INT, 0, MPI_COMM_WORLD);
   myRowptr[vSize] = myNumE;
 
   myColInd = (int *)malloc(sizeof(int) * myNumE);
-  MPI_Scatterv(colInd, eCount, eDispls, MPI_INT,
+  MPI_Scatterv(matrix.csrColIdx, eCount, eDispls, MPI_INT,
                myColInd, myNumE, MPI_INT, 0, MPI_COMM_WORLD);
 
   myMatVal = (double *)malloc(sizeof(double) * myNumE);
-  MPI_Scatterv(matVal, eCount, eDispls, MPI_DOUBLE,
+  MPI_Scatterv(matrix.csrVal, eCount, eDispls, MPI_DOUBLE,
                myMatVal, myNumE, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-  free(rowptr);
-  free(colInd);
-  free(matVal);
 
   // Allocate vector rhs
   rhs = (double *)malloc(sizeof(double) * matrix.n);
   // Allocate vector result
   result = (double *)malloc(sizeof(double) * matrix.n);
+  // Allocate vector myresult
+  myResult = (double *)malloc(sizeof(double) * M);
 
   // Initialize right-hand-side
   for (int i = 0; i < matrix.n; i++)
@@ -97,19 +100,19 @@ int main(int argc, char **argv)
 
   for (int k = 0; k < time_steps; k++)
   {
-    #pragma omp parallel for shared(result) schedule(dynamic)
-    for (int i = 0; i < matrix.m; i++)
+    #pragma omp parallel for shared(result) num_threads(omp_threads) schedule(dynamic)
+    for (int i = 0; i < M; i++)
     {
-      result[i] = 0.0;
+      myResult[i] = 0.0;
       for (int j = matrix.csrRowPtr[i]; j < matrix.csrRowPtr[i + 1]; j++)
       {
         #pragma omp atomic update
-        result[i] += matrix.csrVal[j] * rhs[matrix.csrColIdx[j]];
+        myResult[i] += matrix.csrVal[j] * rhs[matrix.csrColIdx[j]];
       }
     }
 
     //Gather and broadcast result in a more efficient way
-    MPI_Allgather(result, M, MPI_DOUBLE, x, N, MPI_DOUBLE, MPI_COMM_WORLD);
+    MPI_Allgather(myResult, M, MPI_DOUBLE, result, N, MPI_DOUBLE, MPI_COMM_WORLD);
 
     for (int i = 0; i < matrix.m; i++)
     {
