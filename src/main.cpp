@@ -73,6 +73,7 @@ int main(int argc, char **argv)
     vSize = ceil((double)matrix.n / num_procs); //partial vector size for each process
     vSizeLast = matrix.n - (num_procs - 1) * vSize; //vector size for last process
 
+    printf("starting vecData for loop\n");
     // Vector size and displacement for each processor
     for (int p = 0; p < num_procs - 1; p++)
     {
@@ -82,6 +83,7 @@ int main(int argc, char **argv)
     vecDataSize[num_procs - 1] = vSizeLast;
     vecDataDispls[num_procs - 1] = (num_procs - 1) * vSize;
 
+    printf("starting eCount for loop\n");
     // Matrix entries count and displacement for each processor
 		int eCount[num_procs]; int eDispls[num_procs];
 		for (int p = 0; p < num_procs; p++) {
@@ -89,10 +91,12 @@ int main(int argc, char **argv)
 			eDispls[p] = matrix.csrRowPtr[p*vSize];
 		}
 
+    printf("MPI Scatter\n");
     // Scatter matrix entries to each processor
     // by sending partial Row pointers, Column Index and Values
     MPI_Scatter(eCount, 1, MPI_INT, &myNumE, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
+    printf("MPI Scatterv rowPtr\n");
     myRowptr = (int *)malloc(sizeof(int) * (vSize + 1));
     MPI_Scatterv(matrix.csrRowPtr, vecDataSize, vecDataDispls, MPI_INT,
                  myRowptr, vSize, MPI_INT, 0, MPI_COMM_WORLD);
