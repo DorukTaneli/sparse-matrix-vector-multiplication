@@ -20,7 +20,7 @@ int main(int argc, char **argv)
   clock_t start, end;
   csr_matrix matrix;
   string matrix_name;
-  int num_procs, myrank, M, omp_threads;
+  int num_procs, myrank, M, tot_omp_threads, omp_threads_per_mpi, vSize, vSizeLast, myNumE;
   double *myVecData, *myMatVal, *result, *myResult, *rhs, *sendVecData;
   int time_steps, N, *myColInd, *myRowptr;
 
@@ -29,7 +29,8 @@ int main(int argc, char **argv)
   MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 
-  omp_threads = 16 / num_procs;
+  tot_omp_threads = 16 / num_procs;
+  omp_threads_per_mpi = tot_omp_threads / num_procs;
 
   if (myrank == 0) //master
   {
@@ -67,23 +68,46 @@ int main(int argc, char **argv)
     N = matrix.n;
     M = N / num_procs; // Assuming N is a multiple of P
 
+    vSize = ceil((double)nrows / num_procs); //partial vector size for each process
+    vSizeLast = matrix.n - (num_procs - 1) * vSize; //vector size for last process
+
+    // Vector size and displacement for each processor
+    int vecDataSize[num_procs], vecDataDispls[num_procs];
+    for (p = 0; p < num_procs - 1; p++)
+    {
+      vecDataSize[p] = vSize;
+      vecDataDispls[p] = p * vSize;
+    }
+    vecDataSize[num_procs - 1] = vSize2;
+    vecDataDispls[num_procs - 1] = (num_procs - 1) * vSize;
+
+    // Matrix entries count and displacement for each processor
+		int eCount[num_procs]; int eDispls[num_procs];
+		for (p = 0; p < num_procs; p++) {
+			eCount[p] = matrix.csrRowPtr[p*vSize+vecDataSize[p]] - matrix.csrRowPtr[p*vSize];
+			eDispls[p] = matrix.csrRowPtr[p*vSize];
+		}
+
     // Scatter matrix entries to each processor
     // by sending partial Row pointers, Column Index and Values
-    myRowptr = (int *)malloc(sizeof(int) * N);
-    MPI_Scatterv(matrix.csrRowPtr, &N, &M, MPI_INT,
-                 myRowptr, M, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Scatter(eCount, 1, MPI_INT, &myNumE, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    myRowptr = (int *)malloc(sizeof(int) * (vSize + 1));
+    MPI_Scatterv(matrix.csrRowPtr, vecDataSize, vecDataDispls, MPI_INT,
+                 myRowptr, vSize, MPI_INT, 0, MPI_COMM_WORLD);
+    myRowptr[vSize] = myNumE;
     printf("rowPtr scattered\n");
 
-    myColInd = (int *)malloc(sizeof(int) * N);
-    MPI_Scatterv(matrix.csrColIdx, &N, &M, MPI_INT,
-                 myColInd, M, MPI_INT, 0, MPI_COMM_WORLD);
+    myColInd = (int *)malloc(sizeof(int) * myNumE);
+    MPI_Scatterv(matrix.csrColIdx, eCount, eDispls, MPI_INT,
+                 myColInd, myNumE, MPI_INT, 0, MPI_COMM_WORLD);
     printf("colInd scattered\n");
 
-    myMatVal = (double *)malloc(sizeof(double) * N);
-    MPI_Scatterv(matrix.csrVal, &N, &M, MPI_DOUBLE,
-                 myMatVal, M, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    myMatVal = (double *)malloc(sizeof(double) * myNumE);
+    MPI_Scatterv(matrix.csrVal, eCount, eDispls, MPI_DOUBLE,
+                 myMatVal, myNumE, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     printf("csrVal scattered\n");
-                
+
     start = clock();
   }
 
@@ -100,7 +124,7 @@ int main(int argc, char **argv)
 
   for (int k = 0; k < time_steps; k++)
   {
-    //#pragma omp parallel for shared(result) num_threads(omp_threads) schedule(dynamic)
+    //#pragma omp parallel for shared(result) num_threads(omp_threads_per_mpi) schedule(dynamic)
     for (int i = 0; i < M; i++)
     {
       myResult[i] = 0.0;
@@ -111,7 +135,8 @@ int main(int argc, char **argv)
       }
     }
 
-    if (myrank == 0) {
+    if (myrank == 0)
+    {
       //Gather and broadcast result in a more efficient way
       MPI_Allgatherv(myResult, M, MPI_DOUBLE, result, &N, &M, MPI_DOUBLE, MPI_COMM_WORLD);
       printf("Allgathered\n");
