@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 
   omp_threads = 16 / num_procs;
 
-  if (myrank = 0) //master
+  if (myrank == 0) //master
   {
     if (argc < 3)
     {
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 
   MPI_Finalize();
 
-  if (myrank = 0) //master
+  if (myrank == 0) //master
   {
     end = clock();
 
