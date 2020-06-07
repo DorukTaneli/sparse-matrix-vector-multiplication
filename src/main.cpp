@@ -125,7 +125,7 @@ int main(int argc, char **argv)
   for (int k = 0; k < time_steps; k++)
   {
     //#pragma omp parallel for shared(result) num_threads(omp_threads_per_mpi) schedule(dynamic)
-    for (int i = 0; i < M; i++)
+    for (int i = 0; i < matrix.n; i++)
     {
       myResult[i] = 0.0;
       for (int j = myRowptr[i]; j < myRowptr[i + 1]; j++)

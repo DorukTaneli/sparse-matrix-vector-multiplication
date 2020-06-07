@@ -29,13 +29,13 @@ echo "Running compiled binary..."
 
 #serial version
 lscpu
-echo "Serial version..."
+#echo "Serial version..."
 #build/spmv Cube_Coup_dt6/Cube_Coup_dt6.mtx 20
 #build/spmv Flan_1565/Flan_1565.mtx 20
 
 #parallel version
-echo "Parallel version with 1 process"
-mpirun -np 1 build/spmv Cube_Coup_dt6/Cube_Coup_dt6.mtx 20
+#echo "Parallel version with 1 process"
+#mpirun -np 1 build/spmv Cube_Coup_dt6/Cube_Coup_dt6.mtx 20
 
 echo "Parallel version with 2 processes"
 mpirun -np 2 build/spmv Cube_Coup_dt6/Cube_Coup_dt6.mtx 20
@@ -46,8 +46,8 @@ mpirun -np 4 build/spmv Cube_Coup_dt6/Cube_Coup_dt6.mtx 20
 echo "Parallel version with 8 processes"
 mpirun -np 8 build/spmv Cube_Coup_dt6/Cube_Coup_dt6.mtx 20
 
-echo "Parallel version with 16 processes"
-mpirun -np 16 build/spmv Cube_Coup_dt6/Cube_Coup_dt6.mtx 20
+#echo "Parallel version with 16 processes"
+#mpirun -np 16 build/spmv Cube_Coup_dt6/Cube_Coup_dt6.mtx 20
 
 #echo "Parallel version with 16 threads"
 #export OMP_NUM_THREADS=16
