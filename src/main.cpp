@@ -17,6 +17,7 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
+  clock_t start, end;
   csr_matrix matrix;
   string matrix_name;
   int num_procs, myrank, M, omp_threads;
@@ -79,6 +80,8 @@ int main(int argc, char **argv)
     myMatVal = (double *)malloc(sizeof(double) * N);
     MPI_Scatterv(matrix.csrVal, &N, &M, MPI_DOUBLE,
                  myMatVal, M, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+                
+    start = clock();
   }
 
   // Allocate vector rhs
@@ -91,11 +94,6 @@ int main(int argc, char **argv)
   // Initialize right-hand-side
   for (int i = 0; i < matrix.n; i++)
     rhs[i] = (double)1.0 / matrix.n;
-
-  clock_t start, end;
-
-  if (myrank = 0) //master
-    start = clock();
 
   for (int k = 0; k < time_steps; k++)
   {
@@ -110,8 +108,10 @@ int main(int argc, char **argv)
       }
     }
 
-    //Gather and broadcast result in a more efficient way
-    MPI_Allgatherv(myResult, M, MPI_DOUBLE, result, &N, &M, MPI_DOUBLE, MPI_COMM_WORLD);
+    if (myrank == 0) {
+      //Gather and broadcast result in a more efficient way
+      MPI_Allgatherv(myResult, M, MPI_DOUBLE, result, &N, &M, MPI_DOUBLE, MPI_COMM_WORLD);
+    }
 
     for (int i = 0; i < matrix.m; i++)
     {
