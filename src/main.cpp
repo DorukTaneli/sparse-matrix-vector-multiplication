@@ -69,15 +69,15 @@ int main(int argc, char **argv)
 
   // Scatter matrix entries to each processor
   // by sending partial Row pointers, Column Index and Values
-  myRowptr = (int *)malloc(sizeof(int) * (matrix.m + 1));
+  myRowptr = (int *)malloc(sizeof(int) * (M + 1));
   MPI_Scatterv(matrix.csrRowPtr, &N, &M, MPI_INT,
                myRowptr, M, MPI_INT, 0, MPI_COMM_WORLD);
 
-  myColInd = (int *)malloc(sizeof(int) * M);
+  myColInd = (int *)malloc(sizeof(int) * N);
   MPI_Scatterv(matrix.csrColIdx, &N, &M, MPI_INT,
                myColInd, M, MPI_INT, 0, MPI_COMM_WORLD);
 
-  myMatVal = (double *)malloc(sizeof(double) * M);
+  myMatVal = (double *)malloc(sizeof(double) * N);
   MPI_Scatterv(matrix.csrVal, &N, &M, MPI_DOUBLE,
                myMatVal, M, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
