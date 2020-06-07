@@ -72,14 +72,17 @@ int main(int argc, char **argv)
     myRowptr = (int *)malloc(sizeof(int) * (M + 1));
     MPI_Scatterv(matrix.csrRowPtr, &N, &M, MPI_INT,
                  myRowptr, M, MPI_INT, 0, MPI_COMM_WORLD);
+    printf("rowPtr scattered\n");
 
     myColInd = (int *)malloc(sizeof(int) * N);
     MPI_Scatterv(matrix.csrColIdx, &N, &M, MPI_INT,
                  myColInd, M, MPI_INT, 0, MPI_COMM_WORLD);
+    printf("colInd scattered\n");
 
     myMatVal = (double *)malloc(sizeof(double) * N);
     MPI_Scatterv(matrix.csrVal, &N, &M, MPI_DOUBLE,
                  myMatVal, M, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    printf("csrVal scattered\n");
                 
     start = clock();
   }
@@ -111,6 +114,7 @@ int main(int argc, char **argv)
     if (myrank == 0) {
       //Gather and broadcast result in a more efficient way
       MPI_Allgatherv(myResult, M, MPI_DOUBLE, result, &N, &M, MPI_DOUBLE, MPI_COMM_WORLD);
+      printf("Allgathered\n");
     }
 
     for (int i = 0; i < matrix.m; i++)
