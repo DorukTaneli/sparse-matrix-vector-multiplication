@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     N = matrix.n;
     M = N / num_procs; // Assuming N is a multiple of P
 
-    vSize = ceil((double)matrix.n / num_procs); //partial vector size for each process
+    vSize = ceil((double)matrix.n / num_procs);     //partial vector size for each process
     vSizeLast = matrix.n - (num_procs - 1) * vSize; //vector size for last process
 
     printf("starting vecData for loop\n");
@@ -85,36 +85,38 @@ int main(int argc, char **argv)
 
     printf("starting eCount for loop\n");
     // Matrix entries count and displacement for each processor
-		int eCount[num_procs]; int eDispls[num_procs];
-		for (int p = 0; p < num_procs; p++) {
-			eCount[p] = matrix.csrRowPtr[p*vSize+vecDataSize[p]] - matrix.csrRowPtr[p*vSize];
-			eDispls[p] = matrix.csrRowPtr[p*vSize];
-		}
-
-    printf("MPI Scatter\n");
-    // Scatter matrix entries to each processor
-    // by sending partial Row pointers, Column Index and Values
-    MPI_Scatter(eCount, 1, MPI_INT, &myNumE, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-    printf("MPI Scatterv rowPtr\n");
-    myRowptr = (int *)malloc(sizeof(int) * (vSize + 1));
-    MPI_Scatterv(matrix.csrRowPtr, vecDataSize, vecDataDispls, MPI_INT,
-                 myRowptr, vSize, MPI_INT, 0, MPI_COMM_WORLD);
-    myRowptr[vSize] = myNumE;
-    printf("rowPtr scattered\n");
-
-    myColInd = (int *)malloc(sizeof(int) * myNumE);
-    MPI_Scatterv(matrix.csrColIdx, eCount, eDispls, MPI_INT,
-                 myColInd, myNumE, MPI_INT, 0, MPI_COMM_WORLD);
-    printf("colInd scattered\n");
-
-    myMatVal = (double *)malloc(sizeof(double) * myNumE);
-    MPI_Scatterv(matrix.csrVal, eCount, eDispls, MPI_DOUBLE,
-                 myMatVal, myNumE, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    printf("csrVal scattered\n");
-
-    start = clock();
+    int eCount[num_procs];
+    int eDispls[num_procs];
+    for (int p = 0; p < num_procs; p++)
+    {
+      eCount[p] = matrix.csrRowPtr[p * vSize + vecDataSize[p]] - matrix.csrRowPtr[p * vSize];
+      eDispls[p] = matrix.csrRowPtr[p * vSize];
+    }
   }
+
+  printf("MPI Scatter\n");
+  // Scatter matrix entries to each processor
+  // by sending partial Row pointers, Column Index and Values
+  MPI_Scatter(eCount, 1, MPI_INT, &myNumE, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  printf("MPI Scatterv rowPtr\n");
+  myRowptr = (int *)malloc(sizeof(int) * (vSize + 1));
+  MPI_Scatterv(matrix.csrRowPtr, vecDataSize, vecDataDispls, MPI_INT,
+               myRowptr, vSize, MPI_INT, 0, MPI_COMM_WORLD);
+  myRowptr[vSize] = myNumE;
+  printf("rowPtr scattered\n");
+
+  myColInd = (int *)malloc(sizeof(int) * myNumE);
+  MPI_Scatterv(matrix.csrColIdx, eCount, eDispls, MPI_INT,
+               myColInd, myNumE, MPI_INT, 0, MPI_COMM_WORLD);
+  printf("colInd scattered\n");
+
+  myMatVal = (double *)malloc(sizeof(double) * myNumE);
+  MPI_Scatterv(matrix.csrVal, eCount, eDispls, MPI_DOUBLE,
+               myMatVal, myNumE, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  printf("csrVal scattered\n");
+
+  start = clock();
 
   // Allocate vector rhs
   rhs = (double *)malloc(sizeof(double) * matrix.n);
@@ -140,12 +142,9 @@ int main(int argc, char **argv)
       }
     }
 
-    if (myrank == 0)
-    {
-      //Gather and broadcast result in a more efficient way
-      MPI_Allgatherv(myResult, vSize, MPI_DOUBLE, result, vecDataSize, vecDataDispls, MPI_DOUBLE, MPI_COMM_WORLD);
-      printf("Allgathered\n");
-    }
+    //Gather and broadcast result in a more efficient way
+    MPI_Allgatherv(myResult, vSize, MPI_DOUBLE, result, vecDataSize, vecDataDispls, MPI_DOUBLE, MPI_COMM_WORLD);
+    printf("Allgathered\n");
 
     for (int i = 0; i < matrix.m; i++)
     {
@@ -155,15 +154,12 @@ int main(int argc, char **argv)
 
   MPI_Finalize();
 
-  if (myrank == 0) //master
-  {
-    end = clock();
+  end = clock();
 
-    double time_taken = double(end - start) / double(CLOCKS_PER_SEC);
-    cout << "Time taken by program is : " << fixed
-         << time_taken << setprecision(5);
-    cout << " sec " << endl;
-  }
+  double time_taken = double(end - start) / double(CLOCKS_PER_SEC);
+  cout << "Time taken by program is : " << fixed
+       << time_taken << setprecision(5);
+  cout << " sec " << endl;
 
   return EXIT_SUCCESS;
 }
