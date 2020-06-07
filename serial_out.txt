@@ -1,0 +1,15 @@
+Serial version...
+Reading .mtx file
+Cube_Coup_dt6/Cube_Coup_dt6.mtx
+Matrix Rows: 2164760
+Matrix Cols: 2164760
+Matrix nnz: 64685452
+Done reading file
+Time taken by program is : 6.020000 sec
+Reading .mtx file
+Flan_1565/Flan_1565.mtx
+Matrix Rows: 1564794
+Matrix Cols: 1564794
+Matrix nnz: 59485419
+Done reading file
+Time taken by program is : 5.510000 sec
