@@ -66,20 +66,17 @@ int main(int argc, char **argv)
 
   // Scatter matrix entries to each processor
   // by sending partial Row pointers, Column Index and Values
-  MPI_Scatter(eCount, 1, MPI_INT, &myNumE, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
   myRowptr = (int *)malloc(sizeof(int) * (matrix.m + 1));
-  MPI_Scatterv(matrix.csrRowPtr, vecDataSize, vecDataDispls, MPI_INT,
-               myRowptr, vSize, MPI_INT, 0, MPI_COMM_WORLD);
-  myRowptr[vSize] = myNumE;
+  MPI_Scatterv(matrix.csrRowPtr, matrix.n, M, MPI_INT,
+               myRowptr, M, MPI_INT, 0, MPI_COMM_WORLD);
 
-  myColInd = (int *)malloc(sizeof(int) * myNumE);
-  MPI_Scatterv(matrix.csrColIdx, eCount, eDispls, MPI_INT,
-               myColInd, myNumE, MPI_INT, 0, MPI_COMM_WORLD);
+  myColInd = (int *)malloc(sizeof(int) * M);
+  MPI_Scatterv(matrix.csrColIdx, matrix.n, M, MPI_INT,
+               myColInd, M, MPI_INT, 0, MPI_COMM_WORLD);
 
-  myMatVal = (double *)malloc(sizeof(double) * myNumE);
-  MPI_Scatterv(matrix.csrVal, eCount, eDispls, MPI_DOUBLE,
-               myMatVal, myNumE, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  myMatVal = (double *)malloc(sizeof(double) * M);
+  MPI_Scatterv(matrix.csrVal, matrix.n, M, MPI_DOUBLE,
+               myMatVal, M, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 
   // Allocate vector rhs
@@ -104,15 +101,15 @@ int main(int argc, char **argv)
     for (int i = 0; i < M; i++)
     {
       myResult[i] = 0.0;
-      for (int j = matrix.csrRowPtr[i]; j < matrix.csrRowPtr[i + 1]; j++)
+      for (int j = myRowPtr[i]; j < myRowPtr[i + 1]; j++)
       {
         #pragma omp atomic update
-        myResult[i] += matrix.csrVal[j] * rhs[matrix.csrColIdx[j]];
+        myResult[i] += myMatVal[j] * rhs[myColInd[j]];
       }
     }
 
     //Gather and broadcast result in a more efficient way
-    MPI_Allgather(myResult, M, MPI_DOUBLE, result, N, MPI_DOUBLE, MPI_COMM_WORLD);
+    MPI_Allgather(myResult, M, MPI_DOUBLE, result, matrix.n, MPI_DOUBLE, MPI_COMM_WORLD);
 
     for (int i = 0; i < matrix.m; i++)
     {
