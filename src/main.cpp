@@ -7,6 +7,7 @@
 // Author: Doruk Taneli
 
 #include <bits/stdc++.h>
+#include <mpi.h>
 #include "common.h"
 #include "matrix.h"
 #include "mmio.h"
@@ -109,7 +110,7 @@ int main(int argc, char **argv)
     }
 
     //Gather and broadcast result in a more efficient way
-    MPI_Allgather(myResult, M, MPI_DOUBLE, result, matrix.n, MPI_DOUBLE, MPI_COMM_WORLD);
+    MPI_Allgatherv(myResult, M, M, MPI_DOUBLE, result, matrix.n, MPI_DOUBLE, MPI_COMM_WORLD);
 
     for (int i = 0; i < matrix.m; i++)
     {
