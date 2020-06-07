@@ -97,13 +97,13 @@ int main(int argc, char **argv)
 
   for (int k = 0; k < time_steps; k++)
   {
-    #pragma omp parallel for shared(result) num_threads(omp_threads) schedule(dynamic)
+    //#pragma omp parallel for shared(result) num_threads(omp_threads) schedule(dynamic)
     for (int i = 0; i < M; i++)
     {
       myResult[i] = 0.0;
       for (int j = myRowPtr[i]; j < myRowPtr[i + 1]; j++)
       {
-        #pragma omp atomic update
+        //#pragma omp atomic update
         myResult[i] += myMatVal[j] * rhs[myColInd[j]];
       }
     }
