@@ -71,11 +71,11 @@ int main(int argc, char **argv)
     N = matrix.n;
     M = N / num_procs; // Assuming N is a multiple of P
 
-    vSize = ceil((double)matrix.n / num_procs);     //partial vector size for each process
+    vSize = ceil((double)matrix.n / num_procs);     //vector size for each process
     vSizeLast = matrix.n - (num_procs - 1) * vSize; //vector size for last process
 
     printf("starting vecData for loop\n");
-    // Vector size and displacement for each processor
+    // Vector size and displacements for each processor
     for (int p = 0; p < num_procs - 1; p++)
     {
       vecDataSize[p] = vSize;
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
     vecDataDispls[num_procs - 1] = (num_procs - 1) * vSize;
 
     printf("starting eCount for loop\n");
-    // Matrix entries count and displacement for each processor
+    // Matrix entries count and displacements for each processor
     for (int p = 0; p < num_procs; p++)
     {
       eCount[p] = matrix.csrRowPtr[p * vSize + vecDataSize[p]] - matrix.csrRowPtr[p * vSize];
@@ -130,13 +130,13 @@ int main(int argc, char **argv)
 
   for (int k = 0; k < time_steps; k++)
   {
-    //#pragma omp parallel for shared(result) num_threads(omp_threads_per_mpi) schedule(dynamic)
+    #pragma omp parallel for shared(result) num_threads(omp_threads_per_mpi) schedule(dynamic)
     for (int i = 0; i < matrix.n; i++)
     {
       myResult[i] = 0.0;
       for (int j = myRowptr[i]; j < myRowptr[i + 1]; j++)
       {
-        //#pragma omp atomic update
+        #pragma omp atomic update
         myResult[i] += myMatVal[j] * rhs[myColInd[j]];
       }
     }
